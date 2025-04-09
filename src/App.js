@@ -94,31 +94,37 @@ function UserList({ users }) {
 
 // ----- Bar Chart Component -----
 function BarChart({ data }) {
-  // Find the maximum value to scale the bars
-  const maxValue = Math.max(...data.map(item => item.value));
+  const maxValue = Math.max(...data.map(item => item.value), 1); // safety for empty or all-zero
 
   return (
     <div className="chart-container">
       <div className="bar-chart">
-        {data.map((item, index) => (
-          <div key={index} className="bar-container">
-            <div 
-              className="bar" 
-              style={{ 
-                height: `${(item.value / maxValue) * 100}%`,
-                backgroundColor: item.color || 'var(--primary-color)'
-              }}
-            >
-              <span className="bar-value">{item.value}</span>
+        {data.map((item, index) => {
+          const barHeight = Math.max((item.value / maxValue) * 100, 8); // min 8% height
+          const barColor = item.color || `hsl(${index * 40}, 70%, 60%)`;
+
+          return (
+            <div key={index} className="bar-container">
+              <div 
+                className="bar" 
+                style={{
+                  height: `${barHeight}%`,
+                  backgroundColor: barColor
+                }}
+              >
+                <span className="bar-value">{item.value}</span>
+              </div>
+              <div className="bar-label">{item.label}</div>
             </div>
-            <div className="bar-label">{item.label}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div className="chart-axis"></div>
     </div>
   );
 }
+
+
 
 // ----- User Details Page -----
 function UserPage() {
@@ -238,49 +244,101 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // useEffect(() => {
+  //   setLoading(true);
+  //   fetch('https://dementia-backend-gamma.vercel.app/api/users')
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       setUsers(data.users);
+        
+  //       // Calculate domain stats
+  //       const domains = {};
+  //       const categories = {};
+        
+  //       // Process all users
+  //       data.users.forEach(user => {
+  //         // Check if user has activities
+  //         if (user.activities && user.activities.length > 0) {
+  //           // Process each activity
+  //           user.activities.forEach(activity => {
+  //             // Count domains
+  //             if (activity.domain) {
+  //               domains[activity.domain] = (domains[activity.domain] || 0) + 1;
+  //             }
+              
+  //             // Count categories
+  //             if (activity.category) {
+  //               categories[activity.category] = (categories[activity.category] || 0) + 1;
+  //             }
+  //           });
+  //         }
+  //       });
+        
+  //       // Convert domain counts to array for chart
+  //       const domainData = Object.entries(domains).map(([label, value]) => ({
+  //         label,
+  //         value
+  //       })).sort((a, b) => b.value - a.value).slice(0, 8); // Get top 8 domains
+        
+  //       // Convert category counts to array for chart
+  //       const categoryData = Object.entries(categories).map(([label, value]) => ({
+  //         label,
+  //         value,
+  //         color: `hsl(${Math.floor(Math.random() * 260)}, 70%, 65%)`
+  //       })).sort((a, b) => b.value - a.value).slice(0, 8); // Get top 8 categories
+        
+  //       setDomainStats(domainData);
+  //       setCategoryStats(categoryData);
+  //       setLoading(false);
+  //     })
+  //     .catch((err) => {
+  //       console.error('Error fetching users:', err);
+  //       setLoading(false);
+  //     });
+  // }, []);
+
   useEffect(() => {
     setLoading(true);
     fetch('https://dementia-backend-gamma.vercel.app/api/users')
       .then((res) => res.json())
-      .then((data) => {
-        setUsers(data.users);
-        
-        // Calculate domain stats
+      .then(async (data) => {
+        const enrichedUsers = await Promise.all(
+          data.users.map(async (user) => {
+            try {
+              const res = await fetch(`https://dementia-backend-gamma.vercel.app/api/users/${user._id}`);
+              const fullUser = await res.json();
+              return fullUser.user;
+            } catch (err) {
+              console.error('Failed to fetch user by ID:', user._id);
+              return user;
+            }
+          })
+        );
+  
+        setUsers(enrichedUsers);
+  
+        // Aggregate domain + category stats
         const domains = {};
         const categories = {};
-        
-        // Process all users
-        data.users.forEach(user => {
-          // Check if user has activities
-          if (user.activities && user.activities.length > 0) {
-            // Process each activity
+  
+        enrichedUsers.forEach(user => {
+          if (user.activities) {
             user.activities.forEach(activity => {
-              // Count domains
-              if (activity.domain) {
-                domains[activity.domain] = (domains[activity.domain] || 0) + 1;
-              }
-              
-              // Count categories
-              if (activity.category) {
-                categories[activity.category] = (categories[activity.category] || 0) + 1;
-              }
+              domains[activity.domain] = (domains[activity.domain] || 0) + 1;
+              categories[activity.category] = (categories[activity.category] || 0) + 1;
             });
           }
         });
-        
-        // Convert domain counts to array for chart
+  
         const domainData = Object.entries(domains).map(([label, value]) => ({
-          label,
-          value
-        })).sort((a, b) => b.value - a.value).slice(0, 8); // Get top 8 domains
-        
-        // Convert category counts to array for chart
+          label, value
+        })).sort((a, b) => b.value - a.value).slice(0, 8);
+  
         const categoryData = Object.entries(categories).map(([label, value]) => ({
-          label,
-          value,
+          label, value,
           color: `hsl(${Math.floor(Math.random() * 260)}, 70%, 65%)`
-        })).sort((a, b) => b.value - a.value).slice(0, 8); // Get top 8 categories
-        
+        })).sort((a, b) => b.value - a.value).slice(0, 8);
+  
         setDomainStats(domainData);
         setCategoryStats(categoryData);
         setLoading(false);
@@ -290,6 +348,7 @@ function Dashboard() {
         setLoading(false);
       });
   }, []);
+  
 
   // Calculate total activities
   const totalActivities = users.reduce((total, user) => {

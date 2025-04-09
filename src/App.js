@@ -94,21 +94,34 @@ function UserList({ users }) {
 
 // ----- Bar Chart Component -----
 function BarChart({ data }) {
-  const maxValue = Math.max(...data.map(item => item.value), 1); // safety for empty or all-zero
+  // Find highest value for scaling
+  const maxValue = Math.max(...data.map(item => item.value), 1);
 
   return (
     <div className="chart-container">
       <div className="bar-chart">
         {data.map((item, index) => {
-          const barHeight = Math.max((item.value / maxValue) * 100, 8); // min 8% height
-          const barColor = item.color || `hsl(${index * 40}, 70%, 60%)`;
+          // Calculate height percentage and ensure it's visible
+          const heightPercentage = (item.value / maxValue) * 100;
+          // Use a specific color for each bar based on index
+          const colors = [
+            '#8b5cf6', // Purple (primary)
+            '#ec4899', // Pink
+            '#f97316', // Orange
+            '#06b6d4', // Cyan
+            '#10b981', // Emerald
+            '#6366f1', // Indigo
+            '#f59e0b', // Amber
+            '#ef4444', // Red
+          ];
+          const barColor = colors[index % colors.length];
 
           return (
             <div key={index} className="bar-container">
               <div 
                 className="bar" 
                 style={{
-                  height: `${barHeight}%`,
+                  height: `${heightPercentage}%`,
                   backgroundColor: barColor
                 }}
               >
@@ -123,8 +136,6 @@ function BarChart({ data }) {
     </div>
   );
 }
-
-
 
 // ----- User Details Page -----
 function UserPage() {
@@ -244,60 +255,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // useEffect(() => {
-  //   setLoading(true);
-  //   fetch('https://dementia-backend-gamma.vercel.app/api/users')
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       setUsers(data.users);
-        
-  //       // Calculate domain stats
-  //       const domains = {};
-  //       const categories = {};
-        
-  //       // Process all users
-  //       data.users.forEach(user => {
-  //         // Check if user has activities
-  //         if (user.activities && user.activities.length > 0) {
-  //           // Process each activity
-  //           user.activities.forEach(activity => {
-  //             // Count domains
-  //             if (activity.domain) {
-  //               domains[activity.domain] = (domains[activity.domain] || 0) + 1;
-  //             }
-              
-  //             // Count categories
-  //             if (activity.category) {
-  //               categories[activity.category] = (categories[activity.category] || 0) + 1;
-  //             }
-  //           });
-  //         }
-  //       });
-        
-  //       // Convert domain counts to array for chart
-  //       const domainData = Object.entries(domains).map(([label, value]) => ({
-  //         label,
-  //         value
-  //       })).sort((a, b) => b.value - a.value).slice(0, 8); // Get top 8 domains
-        
-  //       // Convert category counts to array for chart
-  //       const categoryData = Object.entries(categories).map(([label, value]) => ({
-  //         label,
-  //         value,
-  //         color: `hsl(${Math.floor(Math.random() * 260)}, 70%, 65%)`
-  //       })).sort((a, b) => b.value - a.value).slice(0, 8); // Get top 8 categories
-        
-  //       setDomainStats(domainData);
-  //       setCategoryStats(categoryData);
-  //       setLoading(false);
-  //     })
-  //     .catch((err) => {
-  //       console.error('Error fetching users:', err);
-  //       setLoading(false);
-  //     });
-  // }, []);
-
-  useEffect(() => {
+  const fetchData = () => {
     setLoading(true);
     fetch('https://dementia-backend-gamma.vercel.app/api/users')
       .then((res) => res.json())
@@ -330,14 +288,16 @@ function Dashboard() {
           }
         });
   
-        const domainData = Object.entries(domains).map(([label, value]) => ({
-          label, value
-        })).sort((a, b) => b.value - a.value).slice(0, 8);
+        // Convert to arrays and sort for charts
+        const domainData = Object.entries(domains)
+          .map(([label, value]) => ({ label, value }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 8);
   
-        const categoryData = Object.entries(categories).map(([label, value]) => ({
-          label, value,
-          color: `hsl(${Math.floor(Math.random() * 260)}, 70%, 65%)`
-        })).sort((a, b) => b.value - a.value).slice(0, 8);
+        const categoryData = Object.entries(categories)
+          .map(([label, value]) => ({ label, value }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 8);
   
         setDomainStats(domainData);
         setCategoryStats(categoryData);
@@ -347,9 +307,13 @@ function Dashboard() {
         console.error('Error fetching users:', err);
         setLoading(false);
       });
+  };
+
+  // Initial data load
+  useEffect(() => {
+    fetchData();
   }, []);
   
-
   // Calculate total activities
   const totalActivities = users.reduce((total, user) => {
     return total + (user.activities ? user.activities.length : 0);
@@ -368,7 +332,7 @@ function Dashboard() {
     <DashboardLayout>
       <div className="dashboard-header">
         <h1>Analytics Dashboard</h1>
-        <button className="btn btn-primary">
+        <button className="btn btn-primary" onClick={fetchData}>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon">
             <path d="M21 12a9 9 0 01-9 9 9 9 0 01-9-9 9 9 0 019-9 9 9 0 019 9z"></path>
             <path d="M9 12l2 2 4-4"></path>

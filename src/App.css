@@ -244,66 +244,73 @@ body {
 
 /* Bar Chart */
 .chart-container {
-  min-height: 300px;
+  min-height: 400px;
   margin-top: var(--spacing-lg);
   position: relative;
+  padding: 40px 20px 40px 20px;
 }
 
 .bar-chart {
   display: flex;
   align-items: flex-end;
-  justify-content: space-around; /* space out bars */
-  height: 240px;
-  padding: 0 10px;
+  height: 300px;
+  padding-bottom: 40px;
+  gap: 16px;
+  justify-content: center;
+  position: relative;
 }
-
 
 .bar {
   width: 40px;
-  min-height: 8px;
+  min-height: 10px; /* Ensure minimum visibility */
+  background-color: var(--primary-color);
   border-radius: 6px 6px 0 0;
   position: relative;
-  transition: height 0.3s ease-in-out;
+  transition: height 0.5s ease;
 }
-
-
-
 .bar-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0 10px;
+  justify-content: flex-end; /* So the bar grows upward from the bottom */
+  height: 100%;             /* Crucial: fill the entire 300px parent */
 }
 
 
-
 .bar-label {
-  margin-top: 8px;
-  font-size: 0.75rem;
+  margin-top: 12px;
+  font-size: 0.85rem;
   color: var(--gray-700);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  font-weight: 500;
 }
 
 .bar-value {
   position: absolute;
-  top: -20px;
+  top: -28px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.75rem;
-  color: var(--gray-600);
-  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--gray-800);
+  font-weight: 700;
+  background-color: var(--gray-50);
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--gray-200);
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
 }
 
 .chart-axis {
   position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 1px;
+  left: 20px;
+  right: 20px;
+  bottom: 40px;
+  height: 2px;
   background-color: var(--gray-300);
 }
 

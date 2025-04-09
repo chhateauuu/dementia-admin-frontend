@@ -5,7 +5,7 @@ import {
   Route,
   useNavigate,
   useParams,
-  Link,
+  NavLink,
 } from 'react-router-dom';
 import './App.css';
 
@@ -14,27 +14,35 @@ function Sidebar() {
   return (
     <div className="sidebar">
       <div className="sidebar-header">
+        <div className="sidebar-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </div>
         <h2>Dementia Admin</h2>
       </div>
       <nav className="sidebar-nav">
         <ul>
           <li>
-            <Link to="/">
+            <NavLink to="/" className={({ isActive }) => isActive ? "active" : ""}>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                <rect x="3" y="3" width="7" height="9"></rect>
+                <rect x="14" y="3" width="7" height="5"></rect>
+                <rect x="14" y="12" width="7" height="9"></rect>
+                <rect x="3" y="16" width="7" height="5"></rect>
               </svg>
               Dashboard
-            </Link>
+            </NavLink>
           </li>
           <li>
-            <Link to="/">
+            <NavLink to="/users" className={({ isActive }) => isActive ? "active" : ""}>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
               Users
-            </Link>
+            </NavLink>
           </li>
         </ul>
       </nav>
@@ -83,6 +91,51 @@ function UserList({ users }) {
   );
 }
 
+// ----- Bar Chart Component -----
+function BarChart({ data }) {
+  // Find highest value for scaling
+  const maxValue = Math.max(...data.map(item => item.value), 1);
+
+  return (
+    <div className="chart-container">
+      <div className="bar-chart">
+        {data.map((item, index) => {
+          // Calculate height percentage and ensure it's visible
+          const heightPercentage = (item.value / maxValue) * 100;
+          // Use a specific color for each bar based on index
+          const colors = [
+            '#8b5cf6', // Purple (primary)
+            '#ec4899', // Pink
+            '#f97316', // Orange
+            '#06b6d4', // Cyan
+            '#10b981', // Emerald
+            '#6366f1', // Indigo
+            '#f59e0b', // Amber
+            '#ef4444', // Red
+          ];
+          const barColor = colors[index % colors.length];
+
+          return (
+            <div key={index} className="bar-container">
+              <div 
+                className="bar" 
+                style={{
+                  height: `${heightPercentage}%`,
+                  backgroundColor: barColor
+                }}
+              >
+                <span className="bar-value">{item.value}</span>
+              </div>
+              <div className="bar-label">{item.label}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="chart-axis"></div>
+    </div>
+  );
+}
+
 // ----- User Details Page -----
 function UserPage() {
   const { id } = useParams();
@@ -118,7 +171,7 @@ function UserPage() {
       <div className="user-details">
         <div className="dashboard-header">
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <button onClick={() => navigate('/')} className="back-button">
+            <button onClick={() => navigate('/users')} className="back-button">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
@@ -193,10 +246,209 @@ function UserPage() {
   );
 }
 
-// ----- Home Page -----
-function Home() {
+// ----- Dashboard Page -----
+function Dashboard() {
+  const [users, setUsers] = useState([]);
+  const [domainStats, setDomainStats] = useState([]);
+  const [categoryStats, setCategoryStats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const fetchData = () => {
+    setLoading(true);
+    fetch('https://dementia-backend-gamma.vercel.app/api/users')
+      .then((res) => res.json())
+      .then(async (data) => {
+        const enrichedUsers = await Promise.all(
+          data.users.map(async (user) => {
+            try {
+              const res = await fetch(`https://dementia-backend-gamma.vercel.app/api/users/${user._id}`);
+              const fullUser = await res.json();
+              return fullUser.user;
+            } catch (err) {
+              console.error('Failed to fetch user by ID:', user._id);
+              return user;
+            }
+          })
+        );
+  
+        setUsers(enrichedUsers);
+  
+        // Aggregate domain + category stats
+        const domains = {};
+        const categories = {};
+  
+        enrichedUsers.forEach(user => {
+          if (user.activities) {
+            user.activities.forEach(activity => {
+              domains[activity.domain] = (domains[activity.domain] || 0) + 1;
+              categories[activity.category] = (categories[activity.category] || 0) + 1;
+            });
+          }
+        });
+  
+        // Convert to arrays and sort for charts
+        const domainData = Object.entries(domains)
+          .map(([label, value]) => ({ label, value }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 8);
+  
+        const categoryData = Object.entries(categories)
+          .map(([label, value]) => ({ label, value }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 8);
+  
+        setDomainStats(domainData);
+        setCategoryStats(categoryData);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Error fetching users:', err);
+        setLoading(false);
+      });
+  };
+
+  // Initial data load
+  useEffect(() => {
+    fetchData();
+  }, []);
+  
+  // Calculate total activities
+  const totalActivities = users.reduce((total, user) => {
+    return total + (user.activities ? user.activities.length : 0);
+  }, 0);
+
+  // Find the most active users
+  const activeUsers = [...users]
+    .sort((a, b) => {
+      const aCount = a.activities ? a.activities.length : 0;
+      const bCount = b.activities ? b.activities.length : 0;
+      return bCount - aCount;
+    })
+    .slice(0, 5);
+
+  return (
+    <DashboardLayout>
+      <div className="dashboard-header">
+        <h1>Analytics Dashboard</h1>
+        <button className="btn btn-primary" onClick={fetchData}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon">
+            <path d="M21 12a9 9 0 01-9 9 9 9 0 01-9-9 9 9 0 019-9 9 9 0 019 9z"></path>
+            <path d="M9 12l2 2 4-4"></path>
+          </svg>
+          Refresh Data
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+        </div>
+      ) : (
+        <>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
+              <div className="stat-info">
+                <div className="stat-label">Total Users</div>
+                <div className="stat-value">{users.length}</div>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20v-6M6 20V10M18 20V4"></path>
+                </svg>
+              </div>
+              <div className="stat-info">
+                <div className="stat-label">Total Activities</div>
+                <div className="stat-value">{totalActivities}</div>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                </svg>
+              </div>
+              <div className="stat-info">
+                <div className="stat-label">Avg. Activities Per User</div>
+                <div className="stat-value">
+                  {users.length ? (totalActivities / users.length).toFixed(1) : 0}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h2>Popular Categories</h2>
+            </div>
+            {categoryStats.length > 0 ? (
+              <BarChart data={categoryStats} />
+            ) : (
+              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px' }}>No category data available</p>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h2>Top Domains</h2>
+            </div>
+            {domainStats.length > 0 ? (
+              <BarChart data={domainStats} />
+            ) : (
+              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px' }}>No domain data available</p>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h2>Most Active Users</h2>
+            </div>
+            {activeUsers.length > 0 ? (
+              <div className="user-list">
+                {activeUsers.map(user => {
+                  const userInitial = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+                  const activityCount = user.activities ? user.activities.length : 0;
+                  
+                  return (
+                    <div key={user._id} className="user-item" onClick={() => navigate(`/user/${user._id}`)}>
+                      <div className="user-item-header">
+                        <div className="user-avatar">{userInitial}</div>
+                        <div>
+                          <div className="user-name">{user.name || 'Unnamed User'}</div>
+                          <div className="user-id">{activityCount} activities</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px' }}>No user activity data available</p>
+            )}
+          </div>
+        </>
+      )}
+    </DashboardLayout>
+  );
+}
+
+// ----- Users Page -----
+function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  
 
   useEffect(() => {
     setLoading(true);
@@ -215,7 +467,7 @@ function Home() {
   return (
     <DashboardLayout>
       <div className="dashboard-header">
-        <h1>Dashboard</h1>
+        <h1>User Management</h1>
         <button className="btn btn-primary">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon">
             <path d="M21 12a9 9 0 01-9 9 9 9 0 01-9-9 9 9 0 019-9 9 9 0 019 9z"></path>
@@ -225,26 +477,9 @@ function Home() {
         </button>
       </div>
 
-      <div className="stats-container">
-        <div className="stat-card">
-          <div className="stat-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-          </div>
-          <div className="stat-info">
-            <div className="stat-label">Total Users</div>
-            <div className="stat-value">{users.length}</div>
-          </div>
-        </div>
-      </div>
-
       <div className="card">
         <div className="card-header">
-          <h2>User Management</h2>
+          <h2>All Users</h2>
         </div>
         
         {loading ? (
@@ -264,7 +499,8 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/users" element={<UsersPage />} />
         <Route path="/user/:id" element={<UserPage />} />
       </Routes>
     </Router>

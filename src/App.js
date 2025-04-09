@@ -5,7 +5,6 @@ import {
   Route,
   useNavigate,
   useParams,
-  Link,
   NavLink,
 } from 'react-router-dom';
 import './App.css';
@@ -449,7 +448,7 @@ function Dashboard() {
 function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  
 
   useEffect(() => {
     setLoading(true);
